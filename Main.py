@@ -1,27 +1,28 @@
-import schedule
-import time
+from gtts import gTTS
 from telegram import Bot
+from datetime import datetime
+import time
+import os
 
-TELEGRAM_TOKEN = 'your_token_here'
-CHAT_ID = 'your_chat_id_here'
+# Environment variables (use Railway's dashboard)
+TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
 
-bot = Bot(token=TELEGRAM_TOKEN)
+bot = Bot(token=TOKEN)
 
-daily_tasks = [
-    {"time": "07:00", "task": "Wake up and stretch"},
-    {"time": "09:00", "task": "Start your work"},
-    {"time": "13:00", "task": "Lunch Time"},
-    {"time": "15:00", "task": "Quick meditation break"},
-    {"time": "20:00", "task": "Dinner Time"},
-    {"time": "22:30", "task": "Prepare to sleep"},
-]
+def send_reminder():
+    now = datetime.now().strftime("%I:%M %p")
+    message = f"Hello! It's {now}. Please check your daily task."
+    tts = gTTS(text=message, lang='en')
+    tts.save("reminder.mp3")
 
-def notify(task):
-    bot.send_message(chat_id=CHAT_ID, text=f"🔔 Reminder: {task}")
+    with open("reminder.mp3", "rb") as voice:
+        bot.send_voice(chat_id=CHAT_ID, voice=voice)
 
-for t in daily_tasks:
-    schedule.every().day.at(t["time"]).do(notify, task=t["task"])
-
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+if __name__ == "__main__":
+    while True:
+        current = datetime.now().strftime("%H:%M")
+        if current in ["08:00", "13:00", "20:00"]:  # customize your times
+            send_reminder()
+            time.sleep(60)
+        time.sleep(10)
